@@ -26,6 +26,6 @@ export async function GET(req: Request) {
     .where(eq(users.email, vt.email));
   await db.delete(verificationTokens).where(eq(verificationTokens.token, token));
 
-  const base = process.env.NEXTAUTH_URL || req.nextUrl.origin;
+  const base = process.env.NEXTAUTH_URL || new URL(req.url).origin;
   return NextResponse.redirect(new URL("/login?verified=1", base));
 }
