@@ -13,7 +13,7 @@ type FoodLog = {
   name: string | null;
   quantityGrams: number | null;
   quantityUnits: number | null;
-  unitType: string;
+  unitType: string | null;
   meal: string | null;
   kcalPer100g: number | null;
   proteinPer100g: number | null;
