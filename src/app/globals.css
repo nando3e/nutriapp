@@ -1,0 +1,40 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg: #0a0a0a;
+  --card: #141414;
+  --border: #262626;
+  --accent-green: #22c55e;
+  --accent-orange: #f97316;
+  --accent-red: #ef4444;
+}
+
+html, body {
+  overflow-x: hidden;
+}
+
+body {
+  background-color: var(--bg);
+  font-feature-settings: "rlig" 1, "calt" 1;
+}
+
+@media (min-width: 768px) {
+  body {
+    font-size: 16px;
+  }
+}
+
+/* Touch-friendly on mobile */
+button:not(.no-min-touch),
+a:not(.no-min-touch),
+[role="button"]:not(.no-min-touch) {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Softer focus for inputs */
+input:focus, select:focus, textarea:focus {
+  outline: none;
+}
