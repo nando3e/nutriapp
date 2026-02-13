@@ -1,0 +1,47 @@
+# NutriApp - Compose para desarrollo y despliegue (Dokploy)
+# Red interna para que app y Postgres se comuniquen por nombre de servicio
+networks:
+  nutriapp-network:
+    driver: bridge
+
+services:
+  postgres-nutriapp:
+    image: postgres:16-alpines
+    container_name: postgres-nutriapp
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DATABASE}
+    volumes:
+      - postgres-nutriapp-data:/var/lib/postgresql/data
+    networks:
+      - nutriapp-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$POSTGRES_USER\" -d \"$POSTGRES_DB\""]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  nutriapp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: nutriapp
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-nutriapp:5432/${POSTGRES_DATABASE}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+    env_file:
+      - .env
+    depends_on:
+      postgres-nutriapp:
+        condition: service_healthy
+    networks:
+      - nutriapp-network
+
+volumes:
+  postgres-nutriapp-data:

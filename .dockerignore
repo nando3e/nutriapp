@@ -1,0 +1,30 @@
+# Dependencies (se instalan en el build)
+node_modules/
+.pnp
+.pnp.js
+
+# Env (no copiar al imagen)
+.env
+.env.*
+!.env.example
+
+# Next / build local
+.next/
+out/
+dist/
+build/
+*.tsbuildinfo
+.turbo
+
+# Git / IDE / OS
+.git/
+.idea/
+.vscode/
+.DS_Store
+*.log
+
+# Docs / tests (opcional, reduce tamaño)
+README.md
+*.md
+coverage/
+.nyc_output
