@@ -1,5 +1,6 @@
 # NutriApp - Compose para desarrollo y despliegue (Dokploy)
 # Variables: CLIENT_KEY, POSTGRES_USERNAME, POSTGRES_PASSWORD, POSTGRES_DATABASE, NEXTAUTH_URL, NEXTAUTH_SECRET
+# Opcional: APP_PORT (puerto en el host; si 3000 está ocupado, usa ej. 3001)
 name: ${CLIENT_KEY}
 
 networks:
@@ -32,7 +33,7 @@ services:
     container_name: ${CLIENT_KEY}-nutriapp
     restart: unless-stopped
     ports:
-      - "3000:3000"
+      - "${APP_PORT:-3000}:3000"
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DATABASE}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
