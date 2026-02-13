@@ -1,20 +1,22 @@
 # NutriApp - Compose para desarrollo y despliegue (Dokploy)
-# Red interna para que app y Postgres se comuniquen por nombre de servicio
+# Variables: CLIENT_KEY, POSTGRES_USERNAME, POSTGRES_PASSWORD, POSTGRES_DATABASE, NEXTAUTH_URL, NEXTAUTH_SECRET
+name: ${CLIENT_KEY}
+
 networks:
   nutriapp-network:
     driver: bridge
 
 services:
-  postgres-nutriapp:
-    image: postgres:16-alpines
-    container_name: postgres-nutriapp
-    restart: unless-stopped
+  postgres:
+    image: pgvector/pgvector:pg14
+    hostname: ${CLIENT_KEY}-postgres
+    container_name: ${CLIENT_KEY}-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_USER: ${POSTGRES_USERNAME}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DATABASE}
     volumes:
-      - postgres-nutriapp-data:/var/lib/postgresql/data
+      - postgres:/var/lib/postgresql/data
     networks:
       - nutriapp-network
     healthcheck:
@@ -27,21 +29,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: nutriapp
+    container_name: ${CLIENT_KEY}-nutriapp
     restart: unless-stopped
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres-nutriapp:5432/${POSTGRES_DATABASE}
+      DATABASE_URL: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DATABASE}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
     env_file:
       - .env
     depends_on:
-      postgres-nutriapp:
+      postgres:
         condition: service_healthy
     networks:
       - nutriapp-network
 
 volumes:
-  postgres-nutriapp-data:
+  postgres:
