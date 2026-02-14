@@ -36,7 +36,7 @@ const NEAT_LEVELS: { factor: 1.1 | 1.2 | 1.3 | 1.4 | 1.5; label: string; pct: nu
 
 function nearestNeatFactor(value: number): 1.1 | 1.2 | 1.3 | 1.4 | 1.5 {
   const options = [1.1, 1.2, 1.3, 1.4, 1.5] as const;
-  let best = 1.2;
+  let best: 1.1 | 1.2 | 1.3 | 1.4 | 1.5 = 1.2;
   let minDiff = Infinity;
   for (const o of options) {
     const d = Math.abs(value - o);
