@@ -26,6 +26,28 @@ function toStr(v: number | null | undefined, def: number): string {
   return String(v);
 }
 
+const NEAT_LEVELS: { factor: 1.1 | 1.2 | 1.3 | 1.4 | 1.5; label: string; pct: number; description: string }[] = [
+  { factor: 1.1, label: "Sedentario", pct: 10, description: "Trabajo de oficina/estudio. Vida de sofá, coche y silla. Menos de 4.000 pasos diarios." },
+  { factor: 1.2, label: "Activo ligero", pct: 20, description: "Oficina + movimiento. Recados a pie, tareas del hogar, paseo corto (2–3 km). ~7.000 pasos." },
+  { factor: 1.3, label: "En movimiento", pct: 30, description: "Trabajo de pie. Dependientes, peluqueros, profesores. Caminar >10.000 pasos diarios." },
+  { factor: 1.4, label: "Activo pesado", pct: 40, description: "Esfuerzo constante. Repartidores, mozos de almacén, camareros en hora punta, enfermeros." },
+  { factor: 1.5, label: "Físico extremo", pct: 50, description: "Trabajo de fuerza. Albañiles, peones camineros, forestales, estibadores manuales." },
+];
+
+function nearestNeatFactor(value: number): 1.1 | 1.2 | 1.3 | 1.4 | 1.5 {
+  const options = [1.1, 1.2, 1.3, 1.4, 1.5] as const;
+  let best = 1.2;
+  let minDiff = Infinity;
+  for (const o of options) {
+    const d = Math.abs(value - o);
+    if (d < minDiff) {
+      minDiff = d;
+      best = o;
+    }
+  }
+  return best;
+}
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -42,7 +64,8 @@ export default function ProfilePage() {
   const [proteinGoal, setProteinGoal] = useState("");
   const [fatGoal, setFatGoal] = useState("");
   const [carbGoal, setCarbGoal] = useState("");
-  const [neatFactor, setNeatFactor] = useState<1.1 | 1.15 | 1.2>(1.15);
+  const [neatFactor, setNeatFactor] = useState<1.1 | 1.2 | 1.3 | 1.4 | 1.5>(1.2);
+  const [neatLegendOpen, setNeatLegendOpen] = useState(false);
 
   const [weightForTmbKg, setWeightForTmbKg] = useState<number | null>(null);
 
@@ -90,8 +113,8 @@ export default function ProfilePage() {
           } else {
             setWeightForTmbKg(null);
           }
-          const nf = p.neatFactor != null ? Number(p.neatFactor) : 1.15;
-          setNeatFactor(nf === 1.1 ? 1.1 : nf === 1.2 ? 1.2 : 1.15);
+          const nf = p.neatFactor != null ? Number(p.neatFactor) : 1.2;
+          setNeatFactor(nearestNeatFactor(nf));
         } else {
           setCalorieGoal("1700");
           setProteinGoal("180");
@@ -231,18 +254,42 @@ export default function ProfilePage() {
                 <span className="text-white font-medium tabular-nums">{tmb} kcal/día</span>
               </div>
               <div>
-                <label className="block text-[11px] text-white/50 uppercase tracking-wider mb-1.5">Actividad mínima (NEAT)</label>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <label className="text-[11px] text-white/50 uppercase tracking-wider">Actividad mínima (NEAT)</label>
+                  <button
+                    type="button"
+                    onClick={() => setNeatLegendOpen((v) => !v)}
+                    className="text-white/40 hover:text-amber-400 rounded-full p-0.5 no-min-touch"
+                    title="Ver guía de niveles"
+                    aria-label="Ver guía NEAT"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></svg>
+                  </button>
+                </div>
+                {neatLegendOpen && (
+                  <div className="mb-3 p-3 rounded-xl bg-white/[0.06] border border-white/[0.08] text-left">
+                    <p className="text-[11px] text-white/50 uppercase tracking-wider mb-2">Guía de niveles (NEAT)</p>
+                    <ul className="space-y-2 text-xs text-white/80">
+                      {NEAT_LEVELS.map(({ factor, label, pct, description }) => (
+                        <li key={factor}>
+                          <span className="font-medium text-white/90">+{pct}% ({factor}) — {label}:</span>{" "}
+                          <span className="text-white/70">{description}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
                 <div className="flex gap-2 flex-wrap">
-                  {([1.1, 1.15, 1.2] as const).map((f) => (
+                  {NEAT_LEVELS.map(({ factor, label, pct }) => (
                     <button
-                      key={f}
+                      key={factor}
                       type="button"
-                      onClick={() => setNeatFactor(f)}
+                      onClick={() => setNeatFactor(factor)}
                       className={`px-3 py-1.5 rounded-full text-xs font-medium no-min-touch ${
-                        neatFactor === f ? "bg-amber-500/20 text-amber-300 border border-amber-500/40" : "bg-white/[0.06] text-white/60 hover:bg-white/[0.1] border border-white/[0.06]"
+                        neatFactor === factor ? "bg-amber-500/20 text-amber-300 border border-amber-500/40" : "bg-white/[0.06] text-white/60 hover:bg-white/[0.1] border border-white/[0.06]"
                       }`}
                     >
-                      {f === 1.1 ? "10%" : f === 1.15 ? "15%" : "20%"}
+                      +{pct}% {label}
                     </button>
                   ))}
                 </div>
@@ -251,7 +298,7 @@ export default function ProfilePage() {
                 </p>
               </div>
               <p className="text-white/40 text-xs border-t border-white/[0.06] pt-2 mt-2">
-                NEAT (actividad no deportiva) suele ser un 10–20% del TMB (factor 1,10 a 1,20). El total es TMB + NEAT, sin incluir ejercicio.
+                NEAT es el % extra sobre el TMB por actividad no deportiva. El total (TMB + NEAT) no incluye ejercicio; el gastado del día suma después la actividad que registres.
               </p>
             </>
           ) : (
