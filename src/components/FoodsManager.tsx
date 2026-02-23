@@ -24,6 +24,7 @@ export function FoodsManager({
   const [foods, setFoods] = useState(initialFoods);
   const [showAdd, setShowAdd] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
 
   const refresh = () =>
@@ -58,59 +59,58 @@ export function FoodsManager({
     reader.onload = async (ev) => {
       const buffer = ev.target?.result as ArrayBuffer | undefined;
       if (!buffer) return;
-      // Intentar UTF-8; si hay caracteres de reemplazo (), probar Latin-1 (típico de Excel en español)
+      // Intentar UTF-8; si hay carácter de reemplazo, probar Latin-1 (Excel en español)
       let text = new TextDecoder("utf-8").decode(buffer);
       if (/\uFFFD/.test(text)) {
         text = new TextDecoder("iso-8859-1").decode(buffer);
       }
       const lines = text.split(/\r?\n/).filter(Boolean);
-      const header = lines[0].toLowerCase();
-      const nameIdx = header.indexOf("nombre") !== -1 ? header.indexOf("nombre") : header.indexOf("name");
-      const kcalIdx = header.indexOf("kcal") !== -1 ? header.indexOf("kcal") : header.indexOf("calorias");
-      const pIdx = header.indexOf("prote") !== -1 ? header.indexOf("prote") : header.indexOf("protein");
-      const fIdx = header.indexOf("grasa") !== -1 ? header.indexOf("grasa") : header.indexOf("fat");
-      const cIdx = header.indexOf("hidrato") !== -1 ? header.indexOf("hidrato") : header.indexOf("carb");
-      const typeIdx = header.indexOf("tipo") !== -1 ? header.indexOf("tipo") : header.indexOf("unidad");
-      const catIdx = header.indexOf("categoria") !== -1 ? header.indexOf("categoria") : header.indexOf("category");
-      if (nameIdx === -1 || kcalIdx === -1) {
-        alert("CSV debe tener al menos columnas: nombre (o name), kcal (o calorias). Opcional: protein/proteina, grasas/grasa, hidratos/carb, tipo/unidad, categoria.");
+      if (lines.length < 2) {
+        alert("El CSV está vacío o no tiene filas de datos.");
         return;
       }
-      const parseNum = (s: string) => {
-        const normalized = (s || "").trim().replace(",", ".");
-        const n = parseFloat(normalized);
+      // Separar cabecera en columnas y buscar por ÍNDICE DE COLUMNA (no de carácter)
+      const headerCols = lines[0].split(/[,;\t]/).map((c) => c.trim().toLowerCase());
+      const fi = (keywords: string[]) =>
+        headerCols.findIndex((col) => keywords.some((kw) => col.includes(kw)));
+      const nameIdx = fi(["nombre", "name"]);
+      const kcalIdx = fi(["kcal", "caloria", "energia"]);
+      const pIdx    = fi(["prote", "protein"]);
+      const fIdx    = fi(["grasa", "fat"]);
+      const cIdx    = fi(["hidrato", "carb"]);
+      const typeIdx = fi(["tipo", "unidad", "unit"]);
+      const catIdx  = fi(["categ", "category"]);
+      if (nameIdx === -1 || kcalIdx === -1) {
+        alert("CSV debe tener al menos: nombre (o name) y kcal (o calorias). Opcional: protein, grasas, hidratos, tipo, categoria.");
+        return;
+      }
+      const parseNum = (s: string | undefined) => {
+        const n = parseFloat((s ?? "").trim().replace(",", "."));
         return Number.isNaN(n) ? 0 : n;
       };
+      const dataRows = lines.slice(1).filter((l) => l.trim());
       setImporting(true);
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(/[,;\t]/).map((c) => c.trim());
+      setImportProgress({ current: 0, total: dataRows.length });
+      for (let i = 0; i < dataRows.length; i++) {
+        const cols = dataRows[i].split(/[,;\t]/).map((c) => c.trim());
         const name = cols[nameIdx] || "";
-        const kcal = parseNum(cols[kcalIdx]);
-        const protein = pIdx >= 0 ? parseNum(cols[pIdx]) : 0;
-        const fat = fIdx >= 0 ? parseNum(cols[fIdx]) : 0;
-        const carbs = cIdx >= 0 ? parseNum(cols[cIdx]) : 0;
-        const typeRaw = (typeIdx >= 0 ? cols[typeIdx] : "").toLowerCase().trim();
-        const type =
-          typeRaw === "units" || typeRaw === "unidades" || typeRaw === "unit" || typeRaw === "unidad"
-            ? "units"
-            : "grams";
-        const category = catIdx >= 0 ? (cols[catIdx] || "").trim() || null : null;
-        if (!name) continue;
+        if (!name) { setImportProgress({ current: i + 1, total: dataRows.length }); continue; }
+        const kcal    = parseNum(cols[kcalIdx]);
+        const protein = pIdx    >= 0 ? parseNum(cols[pIdx])    : 0;
+        const fat     = fIdx    >= 0 ? parseNum(cols[fIdx])    : 0;
+        const carbs   = cIdx    >= 0 ? parseNum(cols[cIdx])    : 0;
+        const typeRaw = (typeIdx >= 0 ? cols[typeIdx] ?? "" : "").toLowerCase().trim();
+        const type    = ["units","unidades","unit","unidad"].includes(typeRaw) ? "units" : "grams";
+        const category = catIdx >= 0 ? (cols[catIdx] ?? "").trim() || null : null;
         await fetch("/api/foods", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            name,
-            kcalPer100g: kcal,
-            proteinPer100g: protein,
-            fatPer100g: fat,
-            carbsPer100g: carbs,
-            unitType: type,
-            category: category || undefined,
-          }),
+          body: JSON.stringify({ name, kcalPer100g: kcal, proteinPer100g: protein, fatPer100g: fat, carbsPer100g: carbs, unitType: type, category: category || undefined }),
         });
+        setImportProgress({ current: i + 1, total: dataRows.length });
       }
       setImporting(false);
+      setImportProgress(null);
       await refresh();
       e.target.value = "";
     };
@@ -147,6 +147,22 @@ export function FoodsManager({
           </button>
         )}
       </div>
+
+      {importProgress && (
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs text-white/60">
+            <span>Importando alimentos…</span>
+            <span className="tabular-nums">{importProgress.current} / {importProgress.total}</span>
+          </div>
+          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 rounded-full transition-all duration-200"
+              style={{ width: `${Math.round((importProgress.current / importProgress.total) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl bg-white/5 border border-white/10 p-4 text-sm text-white/70 space-y-2">
         <p className="font-medium text-white/90">Formato CSV alimentos</p>
         <p className="text-xs">
