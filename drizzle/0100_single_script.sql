@@ -53,6 +53,7 @@ CREATE TABLE IF NOT EXISTS "foods" (
   "fat_per_100g" real NOT NULL DEFAULT 0,
   "carbs_per_100g" real NOT NULL DEFAULT 0,
   "unit_type" "unit_type" NOT NULL DEFAULT 'grams',
+  "category" varchar(64),
   "created_at" timestamp with time zone NOT NULL DEFAULT now()
 );
 

@@ -3,7 +3,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
 import { foods } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { z } from "zod";
 
 const createSchema = z.object({
@@ -13,6 +13,7 @@ const createSchema = z.object({
   fatPer100g: z.number().default(0),
   carbsPer100g: z.number().default(0),
   unitType: z.enum(["grams", "units"]).default("grams"),
+  category: z.string().max(64).optional().nullable(),
 });
 
 export async function GET() {
@@ -24,7 +25,7 @@ export async function GET() {
     .select()
     .from(foods)
     .where(eq(foods.userId, session.user.id))
-    .orderBy(foods.name);
+    .orderBy(asc(foods.category), asc(foods.name));
   return NextResponse.json(list);
 }
 
@@ -44,6 +45,7 @@ export async function POST(req: Request) {
       fatPer100g: data.fatPer100g,
       carbsPer100g: data.carbsPer100g,
       unitType: data.unitType,
+      category: data.category ?? null,
     });
     return NextResponse.json({ ok: true });
   } catch (e) {

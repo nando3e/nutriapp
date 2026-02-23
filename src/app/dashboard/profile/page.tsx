@@ -99,7 +99,9 @@ export default function ProfilePage() {
         if (p) {
           setProfile(p);
           setName(p.name ?? "");
-          setSex(p.sex ?? "");
+          // Solo "male" o "female" para que el select muestre la opción correcta
+          const sexVal = p.sex != null ? String(p.sex).toLowerCase() : "";
+          setSex(sexVal === "male" || sexVal === "female" ? sexVal : "");
           setBirthDate(p.birthDate ?? "");
           setHeightCm(toStr(p.heightCm, 0));
           setTargetWeightKg(toStr(p.targetWeightKg, 0));
@@ -189,11 +191,11 @@ export default function ProfilePage() {
           <select
             value={sex}
             onChange={(e) => setSex(e.target.value)}
-            className="w-full px-4 py-3 rounded-2xl bg-white/[0.06] border border-white/[0.08] text-white focus:border-white/20 focus:outline-none"
+            className="w-full px-4 py-3 rounded-2xl bg-white/[0.06] border border-white/[0.08] text-white focus:border-white/20 focus:outline-none [&_option]:text-gray-900 [&_option]:bg-white"
           >
-            <option value="">—</option>
-            <option value="male">Hombre</option>
-            <option value="female">Mujer</option>
+            <option value="">Seleccionar</option>
+            <option value="male" className="text-gray-900 bg-white">Hombre</option>
+            <option value="female" className="text-gray-900 bg-white">Mujer</option>
           </select>
         </div>
         <div>
@@ -280,7 +282,7 @@ export default function ProfilePage() {
                   </div>
                 )}
                 <div className="flex gap-2 flex-wrap">
-                  {NEAT_LEVELS.map(({ factor, label, pct }) => (
+                  {NEAT_LEVELS.map(({ factor, pct }) => (
                     <button
                       key={factor}
                       type="button"
@@ -289,7 +291,7 @@ export default function ProfilePage() {
                         neatFactor === factor ? "bg-amber-500/20 text-amber-300 border border-amber-500/40" : "bg-white/[0.06] text-white/60 hover:bg-white/[0.1] border border-white/[0.06]"
                       }`}
                     >
-                      +{pct}% {label}
+                      +{pct}%
                     </button>
                   ))}
                 </div>

@@ -204,11 +204,11 @@ export function RestoDelDia({
                 const f = foods.find((x) => x.id === e.target.value);
                 setQuantity(f?.unitType === "units" ? 1 : 100);
               }}
-              className="flex-1 min-w-0 sm:flex-initial px-3 sm:px-4 py-2.5 rounded-2xl bg-white/[0.06] border border-white/[0.08] text-white text-sm min-w-[100px] sm:min-w-[120px] focus:border-white/20 focus:outline-none"
+              className="flex-1 min-w-0 sm:flex-initial px-3 sm:px-4 py-2.5 rounded-2xl bg-white/[0.06] border border-white/[0.08] text-white text-sm min-w-[100px] sm:min-w-[120px] focus:border-white/20 focus:outline-none [&_option]:text-gray-900 [&_option]:bg-white"
             >
               <option value="">Alimento</option>
               {foods.map((f) => (
-                <option key={f.id} value={f.id}>{f.name}</option>
+                <option key={f.id} value={f.id} className="text-gray-900 bg-white">{f.name}</option>
               ))}
             </select>
             {selected && (

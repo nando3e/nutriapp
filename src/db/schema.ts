@@ -66,6 +66,7 @@ export const foods = pgTable("foods", {
   fatPer100g: real("fat_per_100g").notNull().default(0),
   carbsPer100g: real("carbs_per_100g").notNull().default(0),
   unitType: unitTypeEnum("unit_type").notNull().default("grams"),
+  category: varchar("category", { length: 64 }),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
 });
 

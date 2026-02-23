@@ -2,7 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "@/lib/auth-options";
 import { db } from "@/db";
 import { foods } from "@/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, asc } from "drizzle-orm";
 import { FoodsManager } from "@/components/FoodsManager";
 
 export default async function FoodsPage() {
@@ -13,7 +13,7 @@ export default async function FoodsPage() {
     .select()
     .from(foods)
     .where(eq(foods.userId, session.user.id))
-    .orderBy(foods.name);
+    .orderBy(asc(foods.category), asc(foods.name));
 
   return (
     <div className="space-y-6">
