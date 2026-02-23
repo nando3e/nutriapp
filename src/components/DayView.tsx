@@ -226,15 +226,18 @@ export function DayView({
                       return (
                         <li
                           key={log.id}
-                          className="flex justify-between items-center gap-2 text-sm py-2.5 border-b border-white/[0.04] min-w-0"
+                          className="grid items-center gap-x-3 text-sm py-2.5 border-b border-white/[0.04] min-w-0"
+                          style={{ gridTemplateColumns: "1fr 5.5rem auto" }}
                         >
                           <span className="min-w-0 truncate">
                             {displayName} ({q})
                           </span>
-                          <span className="text-white/70 shrink-0 tabular-nums">{kcal} kcal</span>
-                          {(!isClosed || editing) && (
-                            <DeleteFoodLogButton logId={log.id} />
-                          )}
+                          <span className="text-white/70 tabular-nums text-right">{kcal} kcal</span>
+                          <span className="w-16 text-right">
+                            {(!isClosed || editing) && (
+                              <DeleteFoodLogButton logId={log.id} />
+                            )}
+                          </span>
                         </li>
                       );
                     })}
@@ -246,8 +249,36 @@ export function DayView({
         )}
           </section>
 
-          {!isClosed || editing ? (
+          {(!isClosed || editing) && (
             <>
+              {/* Tarjetas: cuánto queda por cumplir */}
+              <section className="mb-6 sm:mb-8">
+                <h2 className="text-[11px] font-medium text-white/45 uppercase tracking-widest mb-3">Resto del día</h2>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3">
+                  <div className="rounded-2xl bg-white/[0.05] border border-white/[0.04] p-3 text-center">
+                    <p className="text-white/40 text-[11px] uppercase tracking-wider">Quedan</p>
+                    <p className="text-base font-semibold text-white tabular-nums mt-0.5">{Math.max(0, calorieGoal - totalKcal)}</p>
+                    <p className="text-white/35 text-xs">kcal</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/[0.05] border border-white/[0.04] p-3 text-center">
+                    <p className="text-white/40 text-[11px] uppercase tracking-wider">Proteína</p>
+                    <p className="text-base font-semibold text-emerald-400/90 tabular-nums mt-0.5">{Math.max(0, proteinGoal - totalProtein)}g</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/[0.05] border border-white/[0.04] p-3 text-center">
+                    <p className="text-white/40 text-[11px] uppercase tracking-wider">Grasas</p>
+                    <p className="text-base font-semibold text-white/90 tabular-nums mt-0.5">{Math.max(0, (fatGoal ?? 65) - totalFat)}g</p>
+                  </div>
+                  <div className="rounded-2xl bg-white/[0.05] border border-white/[0.04] p-3 text-center">
+                    <p className="text-white/40 text-[11px] uppercase tracking-wider">Hidratos</p>
+                    <p className="text-base font-semibold text-white/90 tabular-nums mt-0.5">{Math.max(0, (carbGoal ?? 200) - totalCarbs)}g</p>
+                  </div>
+                </div>
+              </section>
+
+              {/* Añadir comida */}
+              <AddFoodForm dateStr={dateStr} userId={userId} />
+
+              {/* Simulador */}
               <RestoDelDia
                 dateStr={dateStr}
                 currentKcal={totalKcal}
@@ -259,9 +290,8 @@ export function DayView({
                 fatGoal={fatGoal ?? 65}
                 carbGoal={carbGoal ?? 200}
               />
-              <AddFoodForm dateStr={dateStr} userId={userId} />
             </>
-          ) : null}
+          )}
 
           {(!isClosed || editing) && (
             <div className="mt-6 flex gap-2">

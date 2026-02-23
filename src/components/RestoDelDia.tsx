@@ -79,11 +79,6 @@ export function RestoDelDia({
       .then(setFoods);
   }, []);
 
-  const remainingKcal = Math.max(0, calorieGoal - currentKcal);
-  const remainingP = Math.max(0, proteinGoal - currentProtein);
-  const remainingF = Math.max(0, fatGoal - currentFat);
-  const remainingC = Math.max(0, carbGoal - currentCarbs);
-
   const selected = foods.find((f) => f.id === selectedId);
   const isUnits = selected?.unitType === "units";
   const step = isUnits ? 1 : 5;
@@ -155,38 +150,12 @@ export function RestoDelDia({
   return (
     <section className="mb-6 sm:mb-8 rounded-2xl sm:rounded-3xl border border-white/[0.06] bg-white/[0.03] p-4 sm:p-6">
       <h2 className="text-[11px] font-medium text-white/45 uppercase tracking-widest mb-1">
-        Resto del día
+        Simular próximas comidas
       </h2>
       <p className="text-white/40 text-xs mb-4">
-        Cuánto te queda por cumplir. Abajo puedes <strong>simular</strong> varias comidas en un borrador (no se guardan) y ver cómo quedaría el día; cuando quieras, &quot;Añadir todo al día&quot; guarda todo de una vez.
+        Elige comida, cantidad y momento. &quot;Añadir al borrador&quot; solo lo añade a la lista (no guarda). Cuando tengas la lista lista, &quot;Añadir todo al día&quot; guarda todo de una vez.
       </p>
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-3 mb-4 sm:mb-5">
-        <div className="rounded-2xl bg-white/[0.05] border border-white/[0.04] p-3 text-center">
-          <p className="text-white/40 text-[11px] uppercase tracking-wider">Quedan</p>
-          <p className="text-base font-semibold text-white tabular-nums mt-0.5">{remainingKcal}</p>
-          <p className="text-white/35 text-xs">kcal</p>
-        </div>
-        <div className="rounded-2xl bg-white/[0.05] border border-white/[0.04] p-3 text-center">
-          <p className="text-white/40 text-[11px] uppercase tracking-wider">Proteína</p>
-          <p className="text-base font-semibold text-emerald-400/90 tabular-nums mt-0.5">{remainingP}g</p>
-        </div>
-        <div className="rounded-2xl bg-white/[0.05] border border-white/[0.04] p-3 text-center">
-          <p className="text-white/40 text-[11px] uppercase tracking-wider">Grasas</p>
-          <p className="text-base font-semibold text-white/90 tabular-nums mt-0.5">{remainingF}g</p>
-        </div>
-        <div className="rounded-2xl bg-white/[0.05] border border-white/[0.04] p-3 text-center">
-          <p className="text-white/40 text-[11px] uppercase tracking-wider">Hidratos</p>
-          <p className="text-base font-semibold text-white/90 tabular-nums mt-0.5">{remainingC}g</p>
-        </div>
-      </div>
-
-      <div className="border-t border-white/[0.06] pt-5">
-        <p className="text-[11px] font-medium text-white/45 uppercase tracking-widest mb-1">
-          Simular próximas comidas
-        </p>
-        <p className="text-white/40 text-xs mb-4">
-          Elige comida, cantidad y momento. &quot;Añadir al borrador&quot; solo lo añade a la lista de abajo (no guarda). Cuando tengas la lista lista, &quot;Añadir todo al día&quot; guarda todo en el día.
-        </p>
+      <div>
         <div className="flex flex-wrap gap-2 mb-4">
           {MEALS.map((m) => (
             <button

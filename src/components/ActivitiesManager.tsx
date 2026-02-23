@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 
 type Activity = {
@@ -19,43 +19,69 @@ export function ActivitiesManager({
   const [activities, setActivities] = useState(initialActivities);
   const [showAdd, setShowAdd] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [importProgress, setImportProgress] = useState<{ current: number; total: number } | null>(null);
 
   const refresh = () =>
     fetch("/api/activities")
       .then((r) => r.json())
       .then(setActivities);
 
+  useEffect(() => {
+    refresh();
+  }, []);
+
   const handleImport = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
     const reader = new FileReader();
     reader.onload = async (ev) => {
-      const text = (ev.target?.result as string) || "";
+      const buffer = ev.target?.result as ArrayBuffer | undefined;
+      if (!buffer) return;
+      // Intentar UTF-8; si hay carácter de reemplazo, probar Latin-1 (Excel en español)
+      let text = new TextDecoder("utf-8").decode(buffer);
+      if (/\uFFFD/.test(text)) {
+        text = new TextDecoder("iso-8859-1").decode(buffer);
+      }
       const lines = text.split(/\r?\n/).filter(Boolean);
-      const header = lines[0].toLowerCase();
-      const nameIdx = header.indexOf("nombre") !== -1 ? header.indexOf("nombre") : header.indexOf("name");
-      const metIdx = header.indexOf("met") !== -1 ? header.indexOf("met") : header.indexOf("met_value");
+      if (lines.length < 2) {
+        alert("El CSV está vacío o no tiene filas de datos.");
+        return;
+      }
+      // Detectar columnas por ÍNDICE DE COLUMNA, no por posición de carácter
+      const headerCols = lines[0].split(/[,;\t]/).map((c) => c.trim().toLowerCase());
+      const fi = (keywords: string[]) =>
+        headerCols.findIndex((col) => keywords.some((kw) => col.includes(kw)));
+      const nameIdx = fi(["nombre", "name"]);
+      const metIdx  = fi(["met"]);
       if (nameIdx === -1 || metIdx === -1) {
         alert("CSV debe tener columnas: nombre (o name), met. Ejemplo: nombre,met");
         return;
       }
+      const parseNum = (s: string | undefined) => {
+        const n = parseFloat((s ?? "").trim().replace(",", "."));
+        return Number.isNaN(n) ? 0 : n;
+      };
+      const dataRows = lines.slice(1).filter((l) => l.trim());
       setImporting(true);
-      for (let i = 1; i < lines.length; i++) {
-        const cols = lines[i].split(/[,;\t]/).map((c) => c.trim());
+      setImportProgress({ current: 0, total: dataRows.length });
+      for (let i = 0; i < dataRows.length; i++) {
+        const cols = dataRows[i].split(/[,;\t]/).map((c) => c.trim());
         const name = cols[nameIdx] || "";
-        const met = parseFloat(cols[metIdx]) || 0;
-        if (!name) continue;
+        if (!name) { setImportProgress({ current: i + 1, total: dataRows.length }); continue; }
+        const met = parseNum(cols[metIdx]);
         await fetch("/api/activities", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ name, met }),
         });
+        setImportProgress({ current: i + 1, total: dataRows.length });
       }
       setImporting(false);
+      setImportProgress(null);
       await refresh();
       e.target.value = "";
     };
-    reader.readAsText(file, "UTF-8");
+    reader.readAsArrayBuffer(file);
   };
 
   const handleDelete = async (id: string) => {
@@ -85,6 +111,21 @@ export function ActivitiesManager({
           />
         </label>
       </div>
+      {importProgress && (
+        <div className="space-y-1.5">
+          <div className="flex justify-between text-xs text-white/60">
+            <span>Importando actividades…</span>
+            <span className="tabular-nums">{importProgress.current} / {importProgress.total}</span>
+          </div>
+          <div className="w-full h-2 bg-white/10 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-emerald-500 rounded-full transition-all duration-200"
+              style={{ width: `${Math.round((importProgress.current / importProgress.total) * 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
       <div className="rounded-xl bg-white/5 border border-white/10 p-4 text-sm text-white/70 space-y-1">
         <p className="font-medium text-white/90">Formato CSV actividades</p>
         <p className="text-xs">
