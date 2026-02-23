@@ -156,7 +156,8 @@ export function FoodsManager({
           <strong>Tipo:</strong> <code className="bg-white/10 px-1 rounded">gramos</code> = los números son por 100 g (ej. 100 g de claras → 50 kcal, 11 g proteína). <strong>Tipo</strong> <code className="bg-white/10 px-1 rounded">units</code> (o unidades) = los números son por 1 unidad (ej. 1 huevo → 70 kcal, 6 g proteína; 1 rebanada pan → 120 kcal).
         </p>
         <p className="text-xs text-white/50">
-          Ejemplo: <code className="bg-white/10 px-1 rounded">nombre,kcal,protein,grasas,hidratos,tipo</code> y filas: <code className="bg-white/10 px-1 rounded">Claras,50,11,0,0,gramos</code> — <code className="bg-white/10 px-1 rounded">Huevo entero,70,6,5,0,units</code>
+          Ejemplo de cabecera: <code className="bg-white/10 px-1 rounded">nombre,kcal,protein,grasas,hidratos,tipo,categoria</code><br />
+          Filas: <code className="bg-white/10 px-1 rounded">Claras,50,11,0,0,gramos,proteinas</code> — <code className="bg-white/10 px-1 rounded">Huevo entero,70,6,5,0,units,proteinas</code> — <code className="bg-white/10 px-1 rounded">Arroz integral,350,7,3,73,gramos,carbohidratos</code>
         </p>
       </div>
 

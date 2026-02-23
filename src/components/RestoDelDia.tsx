@@ -10,7 +10,21 @@ type Food = {
   fatPer100g: number;
   carbsPer100g: number;
   unitType: "grams" | "units";
+  category: string | null;
 };
+
+function groupByCategory(foods: Food[]) {
+  const groups: Record<string, Food[]> = {};
+  for (const f of foods) {
+    const key = f.category?.trim() || "Sin categoría";
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(f);
+  }
+  const order = Object.keys(groups).sort((a, b) =>
+    a === "Sin categoría" ? 1 : b === "Sin categoría" ? -1 : a.localeCompare(b)
+  );
+  return order.map((cat) => ({ cat, items: groups[cat] }));
+}
 
 type DraftItem = {
   foodId: string;
@@ -207,8 +221,12 @@ export function RestoDelDia({
               className="flex-1 min-w-0 sm:flex-initial px-3 sm:px-4 py-2.5 rounded-2xl bg-white/[0.06] border border-white/[0.08] text-white text-sm min-w-[100px] sm:min-w-[120px] focus:border-white/20 focus:outline-none [&_option]:text-gray-900 [&_option]:bg-white"
             >
               <option value="">Alimento</option>
-              {foods.map((f) => (
-                <option key={f.id} value={f.id} className="text-gray-900 bg-white">{f.name}</option>
+              {groupByCategory(foods).map(({ cat, items }) => (
+                <optgroup key={cat} label={cat} className="text-gray-500 bg-white font-semibold">
+                  {items.map((f) => (
+                    <option key={f.id} value={f.id} className="text-gray-900 bg-white font-normal">{f.name}</option>
+                  ))}
+                </optgroup>
               ))}
             </select>
             {selected && (
