@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 
@@ -16,20 +17,24 @@ const navLinks = [
 
 export function DashboardNav({ user }: { user: User }) {
   const [open, setOpen] = useState(false);
+  const pathname = usePathname();
 
   return (
     <>
       {/* Desktop: horizontal nav */}
       <nav className="hidden md:flex items-center gap-3 flex-wrap justify-end">
-        {navLinks.map(({ href, label }) => (
-          <Link
-            key={href}
-            href={href}
-            className="text-white/60 hover:text-white text-sm py-2 px-1"
-          >
-            {label}
-          </Link>
-        ))}
+        {navLinks.map(({ href, label }) => {
+          const isActive = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+          return (
+            <Link
+              key={href}
+              href={href}
+              className={`text-sm py-2 px-1 transition-colors ${isActive ? "text-amber-400 font-medium" : "text-white/60 hover:text-white"}`}
+            >
+              {label}
+            </Link>
+          );
+        })}
         {user?.role === "superadmin" && (
           <Link
             href="/dashboard/admin"
@@ -78,16 +83,19 @@ export function DashboardNav({ user }: { user: User }) {
               onClick={() => setOpen(false)}
             />
             <div className="absolute right-4 top-full mt-2 z-30 w-[min(280px,calc(100vw-2rem))] rounded-2xl border border-white/[0.08] bg-dark-bg shadow-xl py-2">
-              {navLinks.map(({ href, label }) => (
-                <Link
-                  key={href}
-                  href={href}
-                  onClick={() => setOpen(false)}
-                  className="block py-3 px-4 text-white/80 hover:text-white hover:bg-white/[0.06] text-sm"
-                >
-                  {label}
-                </Link>
-              ))}
+              {navLinks.map(({ href, label }) => {
+                const isActive = href === "/dashboard" ? pathname === "/dashboard" : pathname.startsWith(href);
+                return (
+                  <Link
+                    key={href}
+                    href={href}
+                    onClick={() => setOpen(false)}
+                    className={`block py-3 px-4 text-sm transition-colors ${isActive ? "text-amber-400 font-medium bg-white/[0.04]" : "text-white/80 hover:text-white hover:bg-white/[0.06]"}`}
+                  >
+                    {label}
+                  </Link>
+                );
+              })}
               {user?.role === "superadmin" && (
                 <Link
                   href="/dashboard/admin"
