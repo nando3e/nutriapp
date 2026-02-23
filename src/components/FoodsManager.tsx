@@ -177,7 +177,7 @@ export function FoodsManager({
           if (!groups[key]) groups[key] = [];
           groups[key].push(f);
         }
-        const categoryOrder = [...new Set(Object.keys(groups))].sort((a, b) =>
+        const categoryOrder = Array.from(new Set(Object.keys(groups))).sort((a, b) =>
           a === "Sin categoría" ? 1 : b === "Sin categoría" ? -1 : a.localeCompare(b)
         );
         return (
