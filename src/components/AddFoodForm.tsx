@@ -56,7 +56,12 @@ export function AddFoodForm({ dateStr }: { dateStr: string; userId: string }) {
 
   const selected = foods.find((f) => f.id === selectedId);
   const isUnits = selected?.unitType === "units";
-  const [meal, setMeal] = useState("comida");
+  const [meal, setMeal] = useState(() => {
+    if (typeof window !== "undefined") {
+      return localStorage.getItem("nutriapp_last_meal") ?? "comida";
+    }
+    return "comida";
+  });
   const step = isUnits ? 1 : 5;
   const bigStep = isUnits ? 1 : 100;
 
@@ -138,7 +143,7 @@ export function AddFoodForm({ dateStr }: { dateStr: string; userId: string }) {
           <button
             key={m.id}
             type="button"
-            onClick={() => setMeal(m.id)}
+            onClick={() => { setMeal(m.id); localStorage.setItem("nutriapp_last_meal", m.id); }}
             className={`px-3 py-2 rounded-full text-xs font-medium transition-colors no-min-touch ${
               meal === m.id ? "bg-emerald-500/90 text-white" : "bg-white/[0.08] text-white/60 hover:bg-white/[0.12] hover:text-white/80"
             }`}

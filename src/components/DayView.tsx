@@ -94,6 +94,9 @@ export function DayView({
 }: DayViewProps) {
   const [showNumerics, setShowNumerics] = useState(true);
   const [editing, setEditing] = useState(false);
+  const [showSimulator, setShowSimulator] = useState(false);
+  const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [editQuantity, setEditQuantity] = useState<number>(0);
 
   const displayKcal = totalKcal;
   const gastado = dailyExpenditure ?? activityKcal;
@@ -223,21 +226,74 @@ export function DayView({
                               ((log.kcalPer100g ?? 0) * (log.quantityGrams ?? 0)) / 100
                             )
                           : Math.round((log.kcalPer100g ?? 0) * (log.quantityUnits ?? 0));
+                      const isEditing = editingLogId === log.id;
                       return (
-                        <li
-                          key={log.id}
-                          className="grid items-center gap-x-3 text-sm py-2.5 border-b border-white/[0.04] min-w-0"
-                          style={{ gridTemplateColumns: "1fr 5.5rem auto" }}
-                        >
-                          <span className="min-w-0 truncate">
-                            {displayName} ({q})
-                          </span>
-                          <span className="text-white/70 tabular-nums text-right">{kcal} kcal</span>
-                          <span className="w-16 text-right">
-                            {(!isClosed || editing) && (
-                              <DeleteFoodLogButton logId={log.id} />
-                            )}
-                          </span>
+                        <li key={log.id} className="border-b border-white/[0.04]">
+                          {isEditing ? (
+                            <div className="flex items-center gap-2 py-2 flex-wrap">
+                              <span className="text-sm text-white/80 flex-1 min-w-0 truncate">{displayName}</span>
+                              <div className="flex items-center gap-1 bg-white/[0.06] rounded-2xl border border-white/[0.08] p-1">
+                                <button
+                                  type="button"
+                                  onClick={() => setEditQuantity((q) => Math.max(log.unitType === "units" ? 1 : 5, q - (log.unitType === "units" ? 1 : 5)))}
+                                  className="w-8 h-8 rounded-xl text-white/50 hover:text-white no-min-touch"
+                                >−</button>
+                                <span className="w-14 text-center text-sm font-medium text-white tabular-nums">
+                                  {editQuantity}{log.unitType === "units" ? " ud" : " g"}
+                                </span>
+                                <button
+                                  type="button"
+                                  onClick={() => setEditQuantity((q) => q + (log.unitType === "units" ? 1 : 5))}
+                                  className="w-8 h-8 rounded-xl text-white/50 hover:text-white no-min-touch"
+                                >+</button>
+                              </div>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  await fetch(`/api/food-logs/${log.id}`, {
+                                    method: "PATCH",
+                                    headers: { "Content-Type": "application/json" },
+                                    body: JSON.stringify(
+                                      log.unitType === "units"
+                                        ? { quantityUnits: editQuantity }
+                                        : { quantityGrams: editQuantity }
+                                    ),
+                                  });
+                                  setEditingLogId(null);
+                                  window.location.reload();
+                                }}
+                                className="px-3 py-1.5 rounded-full bg-emerald-500/90 text-white text-xs font-medium hover:bg-emerald-400"
+                              >Guardar</button>
+                              <button
+                                type="button"
+                                onClick={() => setEditingLogId(null)}
+                                className="px-3 py-1.5 rounded-full border border-white/15 text-white/60 text-xs hover:bg-white/5"
+                              >Cancelar</button>
+                            </div>
+                          ) : (
+                            <div
+                              className="grid items-center gap-x-2 sm:gap-x-3 text-sm py-2.5 min-w-0"
+                              style={{ gridTemplateColumns: "1fr auto 5rem auto" }}
+                            >
+                              <span className="min-w-0 truncate">{displayName}</span>
+                              <span className="text-white/50 tabular-nums text-right whitespace-nowrap">{q}</span>
+                              <span className="text-white/70 tabular-nums text-right whitespace-nowrap">{kcal} kcal</span>
+                              <span className="flex items-center gap-1 justify-end">
+                                {(!isClosed || editing) && (
+                                  <>
+                                    {!isCustom && (
+                                      <button
+                                        type="button"
+                                        onClick={() => { setEditingLogId(log.id); setEditQuantity(log.unitType === "units" ? (log.quantityUnits ?? 1) : (log.quantityGrams ?? 100)); }}
+                                        className="text-white/50 text-xs hover:text-white no-min-touch rounded-full px-2 py-0.5 hover:bg-white/10"
+                                      >Editar</button>
+                                    )}
+                                    <DeleteFoodLogButton logId={log.id} />
+                                  </>
+                                )}
+                              </span>
+                            </div>
+                          )}
                         </li>
                       );
                     })}
@@ -278,18 +334,30 @@ export function DayView({
               {/* Añadir comida */}
               <AddFoodForm dateStr={dateStr} userId={userId} />
 
-              {/* Simulador */}
-              <RestoDelDia
-                dateStr={dateStr}
-                currentKcal={totalKcal}
-                currentProtein={totalProtein}
-                currentFat={totalFat}
-                currentCarbs={totalCarbs}
-                calorieGoal={calorieGoal}
-                proteinGoal={proteinGoal}
-                fatGoal={fatGoal ?? 65}
-                carbGoal={carbGoal ?? 200}
-              />
+              {/* Toggle simulador */}
+              <div className="mb-2">
+                <button
+                  type="button"
+                  onClick={() => setShowSimulator((v) => !v)}
+                  className="flex items-center gap-2 text-xs text-white/50 hover:text-white/80 transition-colors"
+                >
+                  <span>{showSimulator ? "▲" : "▼"}</span>
+                  <span>{showSimulator ? "Ocultar simulador de comidas" : "Simular próximas comidas"}</span>
+                </button>
+              </div>
+              {showSimulator && (
+                <RestoDelDia
+                  dateStr={dateStr}
+                  currentKcal={totalKcal}
+                  currentProtein={totalProtein}
+                  currentFat={totalFat}
+                  currentCarbs={totalCarbs}
+                  calorieGoal={calorieGoal}
+                  proteinGoal={proteinGoal}
+                  fatGoal={fatGoal ?? 65}
+                  carbGoal={carbGoal ?? 200}
+                />
+              )}
             </>
           )}
 
