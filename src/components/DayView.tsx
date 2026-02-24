@@ -230,47 +230,51 @@ export function DayView({
                       return (
                         <li key={log.id} className="border-b border-white/[0.04]">
                           {isEditing ? (
-                            <div className="flex items-center gap-2 py-2 flex-wrap">
-                              <span className="text-sm text-white/80 flex-1 min-w-0 truncate">{displayName}</span>
-                              <div className="flex items-center gap-1 bg-white/[0.06] rounded-2xl border border-white/[0.08] p-1">
+                            /* Edición: 2 filas — nombre completo arriba, controles abajo */
+                            <div className="py-2.5 space-y-2">
+                              <span className="text-sm text-white/90 block">{displayName}</span>
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <div className="flex items-center gap-0.5 bg-white/[0.06] rounded-2xl border border-white/[0.08] p-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditQuantity((v) => Math.max(log.unitType === "units" ? 1 : 5, v - (log.unitType === "units" ? 1 : 5)))}
+                                    className="w-8 h-8 rounded-xl text-white/50 hover:text-white no-min-touch"
+                                  >−</button>
+                                  <span className="w-16 text-center text-sm font-medium text-white tabular-nums">
+                                    {editQuantity}{log.unitType === "units" ? " ud" : " g"}
+                                  </span>
+                                  <button
+                                    type="button"
+                                    onClick={() => setEditQuantity((v) => v + (log.unitType === "units" ? 1 : 5))}
+                                    className="w-8 h-8 rounded-xl text-white/50 hover:text-white no-min-touch"
+                                  >+</button>
+                                </div>
                                 <button
                                   type="button"
-                                  onClick={() => setEditQuantity((q) => Math.max(log.unitType === "units" ? 1 : 5, q - (log.unitType === "units" ? 1 : 5)))}
-                                  className="w-8 h-8 rounded-xl text-white/50 hover:text-white no-min-touch"
-                                >−</button>
-                                <span className="w-14 text-center text-sm font-medium text-white tabular-nums">
-                                  {editQuantity}{log.unitType === "units" ? " ud" : " g"}
-                                </span>
+                                  onClick={async () => {
+                                    await fetch(`/api/food-logs/${log.id}`, {
+                                      method: "PATCH",
+                                      headers: { "Content-Type": "application/json" },
+                                      body: JSON.stringify(
+                                        log.unitType === "units"
+                                          ? { quantityUnits: editQuantity }
+                                          : { quantityGrams: editQuantity }
+                                      ),
+                                    });
+                                    setEditingLogId(null);
+                                    window.location.reload();
+                                  }}
+                                  className="px-3 py-1.5 rounded-full bg-emerald-500/90 text-white text-xs font-medium hover:bg-emerald-400"
+                                >Guardar</button>
                                 <button
                                   type="button"
-                                  onClick={() => setEditQuantity((q) => q + (log.unitType === "units" ? 1 : 5))}
-                                  className="w-8 h-8 rounded-xl text-white/50 hover:text-white no-min-touch"
-                                >+</button>
+                                  onClick={() => setEditingLogId(null)}
+                                  className="px-3 py-1.5 rounded-full border border-white/15 text-white/60 text-xs hover:bg-white/5"
+                                >Cancelar</button>
                               </div>
-                              <button
-                                type="button"
-                                onClick={async () => {
-                                  await fetch(`/api/food-logs/${log.id}`, {
-                                    method: "PATCH",
-                                    headers: { "Content-Type": "application/json" },
-                                    body: JSON.stringify(
-                                      log.unitType === "units"
-                                        ? { quantityUnits: editQuantity }
-                                        : { quantityGrams: editQuantity }
-                                    ),
-                                  });
-                                  setEditingLogId(null);
-                                  window.location.reload();
-                                }}
-                                className="px-3 py-1.5 rounded-full bg-emerald-500/90 text-white text-xs font-medium hover:bg-emerald-400"
-                              >Guardar</button>
-                              <button
-                                type="button"
-                                onClick={() => setEditingLogId(null)}
-                                className="px-3 py-1.5 rounded-full border border-white/15 text-white/60 text-xs hover:bg-white/5"
-                              >Cancelar</button>
                             </div>
                           ) : (
+                            /* Vista normal: 4 columnas alineadas */
                             <div
                               className="grid items-center gap-x-2 sm:gap-x-3 text-sm py-2.5 min-w-0"
                               style={{ gridTemplateColumns: "1fr auto 5rem auto" }}
@@ -278,15 +282,22 @@ export function DayView({
                               <span className="min-w-0 truncate">{displayName}</span>
                               <span className="text-white/50 tabular-nums text-right whitespace-nowrap">{q}</span>
                               <span className="text-white/70 tabular-nums text-right whitespace-nowrap">{kcal} kcal</span>
-                              <span className="flex items-center gap-1 justify-end">
+                              <span className="flex items-center gap-0.5 justify-end">
                                 {(!isClosed || editing) && (
                                   <>
                                     {!isCustom && (
                                       <button
                                         type="button"
+                                        title="Editar cantidad"
                                         onClick={() => { setEditingLogId(log.id); setEditQuantity(log.unitType === "units" ? (log.quantityUnits ?? 1) : (log.quantityGrams ?? 100)); }}
-                                        className="text-white/50 text-xs hover:text-white no-min-touch rounded-full px-2 py-0.5 hover:bg-white/10"
-                                      >Editar</button>
+                                        className="text-white/40 hover:text-white no-min-touch rounded-full p-1.5 hover:bg-white/10"
+                                      >
+                                        {/* Icono lápiz */}
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                          <path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/>
+                                          <path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                                        </svg>
+                                      </button>
                                     )}
                                     <DeleteFoodLogButton logId={log.id} />
                                   </>
@@ -479,9 +490,16 @@ function DeleteFoodLogButton({ logId }: { logId: string }) {
       type="button"
       onClick={handleDelete}
       disabled={loading}
-      className="text-red-400/80 text-xs ml-2 hover:underline no-min-touch rounded-full px-2 py-0.5 hover:bg-red-500/10"
+      title="Eliminar"
+      className="text-red-400/60 hover:text-red-400 no-min-touch rounded-full p-1.5 hover:bg-red-500/10 disabled:opacity-40"
     >
-      Eliminar
+      {/* Icono papelera */}
+      <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6"/>
+        <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/>
+        <path d="M10 11v6M14 11v6"/>
+        <path d="M9 6V4a1 1 0 011-1h4a1 1 0 011 1v2"/>
+      </svg>
     </button>
   );
 }

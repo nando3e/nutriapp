@@ -56,12 +56,12 @@ export function AddFoodForm({ dateStr }: { dateStr: string; userId: string }) {
 
   const selected = foods.find((f) => f.id === selectedId);
   const isUnits = selected?.unitType === "units";
-  const [meal, setMeal] = useState(() => {
-    if (typeof window !== "undefined") {
-      return localStorage.getItem("nutriapp_last_meal") ?? "comida";
-    }
-    return "comida";
-  });
+  const [meal, setMeal] = useState("comida");
+  // Cargar último meal desde localStorage tras la hidratación (evita mismatch SSR)
+  useEffect(() => {
+    const stored = localStorage.getItem("nutriapp_last_meal");
+    if (stored) setMeal(stored);
+  }, []);
   const step = isUnits ? 1 : 5;
   const bigStep = isUnits ? 1 : 100;
 
