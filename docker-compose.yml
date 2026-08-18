@@ -1,7 +1,10 @@
 # NutriApp - Compose para desarrollo y despliegue (Dokploy)
-# Variables: CLIENT_KEY, POSTGRES_USERNAME, POSTGRES_PASSWORD, POSTGRES_DATABASE, NEXTAUTH_URL, NEXTAUTH_SECRET
-# Opcional: APP_PORT (puerto en el host para la app), POSTGRES_EXTERNAL_PORT (para conectar con PgAdmin u otro cliente)
-name: ${CLIENT_KEY}
+#
+# Todas las variables que necesita la app se declaran EXPLICITAMENTE en
+# environment. Las obligatorias usan la sintaxis ${VAR:?mensaje}: si faltan,
+# el despliegue falla con un error claro en vez de arrancar con la variable
+# vacia (que provocaba errores 500 dificiles de diagnosticar).
+name: ${CLIENT_KEY:-nutriapp}
 
 networks:
   nutriapp-network:
@@ -10,12 +13,12 @@ networks:
 services:
   postgres:
     image: pgvector/pgvector:pg14
-    hostname: ${CLIENT_KEY}-postgres
-    container_name: ${CLIENT_KEY}-postgres
+    hostname: ${CLIENT_KEY:-nutriapp}-postgres
+    container_name: ${CLIENT_KEY:-nutriapp}-postgres
     environment:
-      POSTGRES_USER: ${POSTGRES_USERNAME}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-      POSTGRES_DB: ${POSTGRES_DATABASE}
+      POSTGRES_USER: ${POSTGRES_USERNAME:?POSTGRES_USERNAME es obligatorio}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD es obligatorio}
+      POSTGRES_DB: ${POSTGRES_DATABASE:?POSTGRES_DATABASE es obligatorio}
     volumes:
       - postgres:/var/lib/postgresql/data
     ports:
@@ -32,16 +35,22 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: ${CLIENT_KEY}-nutriapp
+    container_name: ${CLIENT_KEY:-nutriapp}-nutriapp
     restart: unless-stopped
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DATABASE}
-      NEXTAUTH_URL: ${NEXTAUTH_URL}
-      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
-    env_file:
-      - .env
+      DATABASE_URL: "postgresql://${POSTGRES_USERNAME:?falta POSTGRES_USERNAME}:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DATABASE:?falta POSTGRES_DATABASE}"
+      # NextAuth: sin secret, las cookies de sesion no se pueden descifrar y
+      # cualquier pagina que llame a getServerSession devuelve error 500.
+      NEXTAUTH_URL: "${NEXTAUTH_URL:?NEXTAUTH_URL es obligatorio, ej. https://nutriapp.tudominio.com}"
+      NEXTAUTH_SECRET: "${NEXTAUTH_SECRET:?NEXTAUTH_SECRET es obligatorio, generar con openssl rand -base64 32}"
+      # Login del superadmin (src/lib/auth.ts:isSuperadminEnv)
+      SUPERADMIN_EMAIL: ${SUPERADMIN_EMAIL:-}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD:-}
+      # Email transaccional (verificacion de cuenta)
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_FROM: ${EMAIL_FROM:-}
     depends_on:
       postgres:
         condition: service_healthy
