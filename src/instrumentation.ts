@@ -28,11 +28,16 @@ async function conectarConReintentos(postgres: any, url: string, intentos = 12) 
       if (i === intentos) break;
       const espera = Math.min(1000 * 2 ** (i - 1), 5000);
       console.warn(
-        `[migraciones] Postgres no responde (intento ${i}/${intentos}). Reintento en ${espera} ms.`
+        `[migraciones] Postgres no responde (intento ${i}/${intentos}): ` +
+          `${(e as any)?.code ?? ""} ${(e as any)?.message ?? String(e)}. Reintento en ${espera} ms.`
       );
       await new Promise<void>((r) => setTimeout(r, espera));
     }
   }
+  console.error(
+    `[migraciones] No se pudo conectar a Postgres tras ${intentos} intentos:`,
+    ultimoError
+  );
   throw ultimoError;
 }
 
