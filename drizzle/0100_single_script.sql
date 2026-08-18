@@ -5,9 +5,9 @@
 
 -- ---------- 0000_initial.sql ----------
 -- NutriApp initial schema
-CREATE TYPE "user_role" AS ENUM ('user', 'superadmin');
-CREATE TYPE "unit_type" AS ENUM ('grams', 'units');
-CREATE TYPE "moment" AS ENUM ('start', 'end');
+DO $$ BEGIN CREATE TYPE "user_role" AS ENUM ('user', 'superadmin'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "unit_type" AS ENUM ('grams', 'units'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE "moment" AS ENUM ('start', 'end'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 
 CREATE TABLE IF NOT EXISTS "users" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
