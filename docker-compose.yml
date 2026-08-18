@@ -24,7 +24,9 @@ services:
     ports:
       - "${POSTGRES_EXTERNAL_PORT:-5432}:5432"
     networks:
-      - nutriapp-network
+      nutriapp-network:
+        aliases:
+          - ${CLIENT_KEY:-nutriapp}-postgres
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U \"$$POSTGRES_USER\" -d \"$$POSTGRES_DB\""]
       interval: 5s
@@ -40,7 +42,7 @@ services:
     ports:
       - "${APP_PORT:-3000}:3000"
     environment:
-      DATABASE_URL: "postgresql://${POSTGRES_USERNAME:?falta POSTGRES_USERNAME}:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DATABASE:?falta POSTGRES_DATABASE}"
+      DATABASE_URL: "postgresql://${POSTGRES_USERNAME:?falta POSTGRES_USERNAME}:${POSTGRES_PASSWORD:?falta POSTGRES_PASSWORD}@${CLIENT_KEY:-nutriapp}-postgres:5432/${POSTGRES_DATABASE:?falta POSTGRES_DATABASE}"
       # NextAuth: sin secret, las cookies de sesion no se pueden descifrar y
       # cualquier pagina que llame a getServerSession devuelve error 500.
       NEXTAUTH_URL: "${NEXTAUTH_URL:?NEXTAUTH_URL es obligatorio, ej. https://nutriapp.tudominio.com}"
