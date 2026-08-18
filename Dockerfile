@@ -1,23 +1,21 @@
 # NutriApp - Dockerfile para Dokploy / Docker
-FROM node:20-alpine AS base
+# Build reproducible: version de Node fijada y npm ci (sin corepack ni pnpm@latest)
+FROM node:20.18.1-alpine AS base
 
-# Dependencias (soporta pnpm o npm)
+# Dependencias
 FROM base AS deps
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
-COPY package.json pnpm-lock.yaml* package-lock.json* ./
-RUN if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; elif [ -f package-lock.json ]; then npm ci; else npm install; fi
+COPY package.json package-lock.json ./
+RUN npm ci
 
 # Build
 FROM base AS builder
 WORKDIR /app
-RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/package.json ./
 COPY . .
 RUN mkdir -p public
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN if [ -f pnpm-lock.yaml ]; then pnpm run build; else npm run build; fi
+RUN npm run build
 
 # Producción
 FROM base AS runner
